@@ -10,52 +10,30 @@
 
 module.exports = function(grunt) {
 
-  // Project configuration.
-  grunt.initConfig({
-    jshint: {
-      all: [
-        'Gruntfile.js',
-        'tasks/*.js',
-        '<%= nodeunit.tests %>',
-      ],
-      options: {
-        jshintrc: '.jshintrc',
-      },
-    },
+  grunt.registerMultiTask('po2json', 'Convert PO to JSON files', function() {
+    var options = this.options();
 
-    // Before generating any new files, remove any previously-created files.
-    clean: {
-      tests: ['tmp'],
-    },
+    var path = require('path');
+    var po2json = require('po2json');
 
-    // Configuration to be run (and then tested).
-    po2json: {
-      simple_options: {
-        src: ['test/**/*.po'],
-        dest: 'tmp/dest/json/'
-      },
-    },
+    this.files.forEach(function(line) {
+      line.src.forEach(function(file) {
+        grunt.log.writeln('File "' + file + '" waiting.');
 
-    // Unit tests.
-    nodeunit: {
-      tests: ['test/*_test.js'],
-    },
+        var jsonData = '';
+        try {
+          jsonData = po2json.parseFileSync(file, {format: 'jed'});
+          var filename = path.basename(file, (path.extname(file)));
+          var dest = path.join(line.dest, filename + '.json');
+          grunt.file.write(dest, JSON.stringify(jsonData));
+          grunt.log.writeln('File "' + dest + '" created.');
+        } catch (e) {}
+
+        // po2json.parseFileSync(file, {format: 'jed' }, function (err, jsonData) {
+        // });
+      });
+    });
 
   });
-
-  // Actually load this plugin's task(s).
-  grunt.loadTasks('tasks');
-
-  // These plugins provide necessary tasks.
-  grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-contrib-nodeunit');
-
-  // Whenever the "test" task is run, first clean the "tmp" dir, then run this
-  // plugin's task(s), then test the result.
-  grunt.registerTask('test', ['clean', 'po2json', 'nodeunit']);
-
-  // By default, lint and run all tests.
-  grunt.registerTask('default', ['jshint', 'test']);
 
 };
